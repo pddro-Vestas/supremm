@@ -20,10 +20,19 @@ class CgroupMemory(Plugin):
         super(CgroupMemory, self).__init__(job)
         self._data = {}
         self._hostcounts = {}
+        #This will work with single node jobs only
+        #NOTE: Support is limited to single node jobs. It will be expanded in the future.
+        hostname = job.acct['host_list'][0]
+        #print(hostname)
         if job.acct['resource_manager'] == 'pbs':
             self._expectedcgroup = "/torque/{0}".format(job.job_id)
         elif job.acct['resource_manager'] == 'slurm':
             self._expectedcgroup = "/slurm/uid_{0}/job_{1}".format(job.acct['uid'], job.job_id)
+            #self._expectedcgroup = "/slurm/uid_{0}/job_{1}".format(job.acct['uid'], job.job_id)
+            self._expectedcgroup = "/system.slice/{0}_slurmstepd.scope/job_{1}".format(hostname, job.job_id)
+            #print(self._expectedcgroup)
+            #print(vars(job))
+            #print(job.acct)
         else:
             raise NotApplicableError
 
@@ -33,6 +42,10 @@ class CgroupMemory(Plugin):
             the job, we use the RollingStats() class to keep track of the mean
             values.
         """
+        print("nodemeta")
+        print(vars(nodemeta))
+        #print(data)
+        #print(description)
 
         if len(data[0]) == 0:
             return True
@@ -48,6 +61,7 @@ class CgroupMemory(Plugin):
             for idx, desc in enumerate(description[0][1]):
                 if re.match(r"^" + re.escape(self._expectedcgroup) + r"($|\.)", desc):
                     dataidx = idx
+                    #print("match")
                     break
             # No cgroup info at this datapoint
             if dataidx is None:
@@ -106,5 +120,6 @@ class CgroupMemory(Plugin):
         result["limit"] = calculate_stats(stats["limit"])
         result["usageratio"]["avg"] = calculate_stats(stats["usageratio"]["avg"])
         result["usageratio"]["max"] = calculate_stats(stats["usageratio"]["max"])
-
+        #print("result for CgroupMemory")
+        #print(result)
         return result
