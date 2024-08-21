@@ -24,29 +24,17 @@ class CgroupMemTimeseries(Plugin):
         self._data = TimeseriesAccumulator(job.nodecount, self._job.walltime)
         self._hostdata = {}
         self._hostcounts = {}
-        #This will work with single node jobs only
-        #NOTE: Support is limited to single node jobs. It will be expanded in the future.
-        hostname = job.acct['host_list'][0]
-        #print(hostname)
         if job.acct['resource_manager'] == 'pbs':
             self._expectedcgroup = "/torque/{0}".format(job.job_id)
         elif job.acct['resource_manager'] == 'slurm':
             #self._expectedcgroup = "/slurm/uid_{0}/job_{1}".format(job.acct['uid'], job.job_id)
-            self._expectedcgroup = "/system.slice/{0}_slurmstepd.scope/job_{1}".format(hostname, job.job_id)
-            #print(self._expectedcgroup)
-            #print(vars(job))
-            #print(job.acct)
+            self._expectedcgroup = "/system.slice/slurmstepd.scope/job_{0}".format(job.job_id)
         else:
             raise NotApplicableError
 
     def process(self, nodemeta, timestamp, data, description):
 
         hostidx = nodemeta.nodeindex
-
-        #print("hostidx")
-        #print(hostidx)
-        #print("nodemeta")
-        #print(vars(nodemeta))
 
         if len(data[0]) == 0:
             # Skip data point with no data
@@ -61,7 +49,6 @@ class CgroupMemTimeseries(Plugin):
             for idx, desc in enumerate(description[0][1]):
                 if re.match(r"^" + re.escape(self._expectedcgroup) + r"($|\.)", desc):
                     dataidx = idx
-                    #print("match")
                     break
             # No cgroup info at this datapoint
             if dataidx is None:
@@ -122,9 +109,6 @@ class CgroupMemTimeseries(Plugin):
         for hostidx in includelist:
             retdata['hosts'][str(hostidx)] = {}
             retdata['hosts'][str(hostidx)]['all'] = values[hostidx, :, 1].tolist()
-
-        #print("retdata")
-        #print(retdata)
 
         return retdata
 
