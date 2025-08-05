@@ -23,7 +23,8 @@ class CgroupMemory(Plugin):
         if job.acct['resource_manager'] == 'pbs':
             self._expectedcgroup = "/torque/{0}".format(job.job_id)
         elif job.acct['resource_manager'] == 'slurm':
-            self._expectedcgroup = "/slurm/uid_{0}/job_{1}".format(job.acct['uid'], job.job_id)
+            # self._expectedcgroup = "/slurm/uid_{0}/job_{1}".format(job.acct['uid'], job.job_id)
+            self._expectedcgroup = "/system.slice/slurmstepd.scope/job_{0}".format(job.job_id)
         else:
             raise NotApplicableError
 
